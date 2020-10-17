@@ -20,24 +20,24 @@ export class GamePanel extends cc.Component {
     public static instance: GamePanel = null;
 
     @property(cc.Prefab)
-    private cardPrefab: cc.Prefab = null;
+    private cardPrefab: cc.Prefab = null;   // 卡牌prefab
 
-    private meChairId: number = 0;
+    private meChairId: number = 0;      //我的座位号
     @property(cc.Node)
-    private normalBtns: cc.Node = null;
+    private normalBtns: cc.Node = null;     // 出牌按钮
     @property(cc.Node)
-    private qiangdizhuBtns: cc.Node = null;
+    private qiangdizhuBtns: cc.Node = null;     // 抢地主按钮
 
-    private state: e_roomState = e_roomState.decideDizhu;
-    private nowTime: number = 0;
+    private state: e_roomState = e_roomState.decideDizhu;   // 房间状态
+    private nowTime: number = 0;        // 当前倒计时
     private nowTimeInt: number = -1;
-    private nowChairId: number = 0;
-    private dipai: I_card[] = [];
+    private nowChairId: number = 0;     // 当前决策者
+    private dipai: I_card[] = [];       // 底牌
     private players: { [chairId: number]: { "info": I_gamePlayer, "node": cc.Node } } = {};
-    private qiangDizhuMaxScore: number = 0;
-    private dizhuChairId: number = 0;
-    private lastPlayChairId: number = 0;
-    private nowClockLabel: cc.Label = null;
+    private qiangDizhuMaxScore: number = 0;     // 抢地主出现的最大分
+    private dizhuChairId: number = 0;       // 地主座位号
+    private lastPlayChairId: number = 0;    // 上个出了牌的座位号
+    private nowClockLabel: cc.Label = null;    // 当前计时钟
     private isGameOver: boolean = false;
 
     onLoad() {
@@ -55,7 +55,6 @@ export class GamePanel extends cc.Component {
 
     init() {
         let data = PlayerInfo.gameData;
-        let self = this;
         this.state = data.state;
         this.nowTime = data.nowTime;
         this.nowChairId = data.nowChairId;
@@ -63,6 +62,7 @@ export class GamePanel extends cc.Component {
         this.dizhuChairId = data.dizhuChairId;
         this.lastPlayChairId = data.lastPlayChairId;
         this.dipai = data.dipai;
+
         for (let one of data.players) {
             if (one.uid === PlayerInfo.uid) {
                 this.meChairId = one.chairId;
@@ -70,12 +70,10 @@ export class GamePanel extends cc.Component {
             }
         }
         for (let one of data.players) {
-            let node = this.node.getChildByName("player" + getNodeId(one.chairId));
+            let node = this.node.getChildByName("player" + this.getNodeId(one.chairId));
             this.players[one.chairId] = { "info": one, "node": node };
 
             node.getChildByName("left").getComponent(cc.Label).string = "x" + one.cards.length;
-            node.getChildByName("clock").active = one.chairId === this.nowChairId;
-            node.getChildByName("noCards").active = false;
             if (one.chairId == this.meChairId) {
                 cc.find("meInfo/nickname", this.node).getComponent(cc.Label).string = one.nickname;
                 cc.find("meInfo/gold", this.node).getComponent(cc.Label).string = "金币:" + one.gold;
@@ -86,12 +84,17 @@ export class GamePanel extends cc.Component {
 
             let cardsNode = node.getChildByName("cards");
             delChildren(cardsNode);
-            if (this.state === e_roomState.normal && one.lastCards.length === 0) {
-                node.getChildByName("noCards").active = true;
-            } else {
-                for (let card of one.lastCards) {
-                    this.newCard(card, cardsNode);
+            if (this.state === e_roomState.normal) {
+                if (one.lastCards.length === 0) {
+                    node.getChildByName("noCards").active = true;
+                } else {
+                    node.getChildByName("noCards").active = false;
+                    for (let card of one.lastCards) {
+                        this.newCard(card, cardsNode);
+                    }
                 }
+            } else {
+                node.getChildByName("noCards").active = false;
             }
 
 
@@ -99,11 +102,21 @@ export class GamePanel extends cc.Component {
                 let clock = node.getChildByName("clock");
                 clock.active = true;
                 this.nowClockLabel = clock.children[0].getComponent(cc.Label);
+                delChildren(cardsNode);
+                node.getChildByName("noCards").active = false;
+            } else {
+                node.getChildByName("clock").active = false;
             }
         }
 
         if (this.state === e_roomState.normal) {
-            this.setDizhu(this.dizhuChairId);
+            this.players[this.dizhuChairId].node.getChildByName("dizhu").active = true;
+
+            let dipaiParent = this.node.getChildByName("dipai");
+            delChildren(dipaiParent);
+            for (let one of this.dipai) {
+                this.newCard(one, dipaiParent);
+            }
         }
 
         let meCardNode = CardSelect.instance.node;
@@ -126,14 +139,14 @@ export class GamePanel extends cc.Component {
             this.qiangdizhuBtns.active = false;
             this.normalBtns.active = false;
         }
+    }
 
-        function getNodeId(chairId: number) {
-            let id = chairId - self.meChairId;
-            if (id < 0) {
-                id += 3;
-            }
-            return id;
+    private getNodeId(chairId: number) {
+        let id = chairId - this.meChairId;
+        if (id < 0) {
+            id += 3;
         }
+        return id;
     }
 
     private getNextChairId(chairId: number) {
@@ -194,11 +207,6 @@ export class GamePanel extends cc.Component {
         }
     }
 
-    private setDizhu(chairId: number) {
-        this.dizhuChairId = chairId;
-        this.players[chairId].node.getChildByName("dizhu").active = true;
-    }
-
 
     private svr_onQiangDizhu(msg: { "score": number, "dizhuChairId": number }) {
         this.players[this.nowChairId].node.getChildByName("clock").active = false;
@@ -207,13 +215,15 @@ export class GamePanel extends cc.Component {
         }
         if (msg.dizhuChairId !== -1) {
             this.state = e_roomState.normal;
-            this.setDizhu(msg.dizhuChairId);
-            this.lastPlayChairId = this.dizhuChairId;
+            this.dizhuChairId = msg.dizhuChairId;
             this.nowChairId = msg.dizhuChairId;
+            this.nowTime = 20 * 1000;
+            this.lastPlayChairId = this.dizhuChairId;
 
             let p = this.players[this.nowChairId];
             p.info.cards.push(...this.dipai);
             p.node.getChildByName("left").getComponent(cc.Label).string = "x" + p.info.cards.length;
+            p.node.getChildByName("dizhu").active = true;
 
             let dipaiParent = this.node.getChildByName("dipai");
             delChildren(dipaiParent);
@@ -221,12 +231,11 @@ export class GamePanel extends cc.Component {
                 this.newCard(one, dipaiParent);
             }
 
-            this.nowTime = 20 * 1000;
             let node = p.node.getChildByName("clock");
             node.active = true;
             this.nowClockLabel = node.children[0].getComponent(cc.Label);
 
-            if (msg.dizhuChairId === this.meChairId) {
+            if (this.dizhuChairId === this.meChairId) {
                 this.normalBtns.active = true;
                 let cardsArr = p.info.cards;
                 cardsArr.sort((a, b) => {
@@ -237,7 +246,6 @@ export class GamePanel extends cc.Component {
                 for (let one of this.dipai) {
                     this.newCard(one, meCardNode);
                 }
-
                 for (let i = 0; i < cardsArr.length; i++) {
                     meCardNode.getChildByName(cardsArr[i].id.toString()).setSiblingIndex(i);
                 }
@@ -271,14 +279,14 @@ export class GamePanel extends cc.Component {
     private svr_onPlayCard(msg: { "cardRes": I_cardRes, "isOver": boolean }) {
         let info = this.players[this.nowChairId];
         info.node.getChildByName("clock").active = false;
-        for (let one of msg.cardRes.cards) {
-            this.newCard(one, info.node.getChildByName("cards"));
-        }
         if (this.nowChairId === this.meChairId) {
             this.normalBtns.active = false;
         }
         let cards = msg.cardRes.cards;
         if (cards.length > 0) {
+            for (let one of msg.cardRes.cards) {
+                this.newCard(one, info.node.getChildByName("cards"));
+            }
             for (let one of cards) {
                 this.removeCardById(info.info.cards, one.id);
             }

@@ -197,8 +197,8 @@ export class Room {
     }
 
     private dizhuOk(chairId: number) {
-        this.dizhuChairId = chairId;
         this.state = e_roomState.normal;
+        this.dizhuChairId = chairId;
         this.nowChairId = chairId;
         this.nowTime = 20 * 1000;
         this.lastPlayChairId = chairId;
@@ -211,17 +211,17 @@ export class Room {
 
     // 出牌
     playCard(uid: number, cardIds: number[], next: Function) {
+        if (this.state !== e_roomState.normal) {
+            return;
+        }
         let p = this.getPlayer(uid);
         if (p.chairId !== this.nowChairId) {    // 未轮到出牌
-            console.log("1111")
             return;
         }
         cardIds = Array.from(new Set(cardIds));     // id去重
 
         if (cardIds.length === 0) { // 不要
             if (p.chairId === this.lastPlayChairId) {   // 直接出牌时，不能过
-                console.log("222")
-
                 return;
             }
             p.lastPlayCard = [];
@@ -254,8 +254,6 @@ export class Room {
         if (this.lastPlayChairId === p.chairId) { // 直接出牌
             let cardRes = cardUtil.getCardRes(cardArr);
             if (cardRes.card_arr_type === e_card_arr_type.none) {
-                console.log("333")
-
                 next({ "code": 1, "info": "非法牌组" })
                 return;
             }
@@ -266,8 +264,6 @@ export class Room {
         // 必须比上家大
         let res = this.isBigger(cardArr);
         if (!res.bigger) {
-            console.log("444")
-
             next({ "code": 2, "info": "非法牌组或要不起" })
             return;
         }
@@ -361,7 +357,6 @@ export class Room {
             return { "bigger": false, "cardRes": null as any };
         } else {
             let cardRes = cardUtil.isCardType(cardArr, last.card_arr_type);
-            console.log(last, cardRes);
             if (cardRes.card_arr_type === e_card_arr_type.none) {
                 return { "bigger": false, "cardRes": null as any };
             } else if (cardRes.score > last.score) {
