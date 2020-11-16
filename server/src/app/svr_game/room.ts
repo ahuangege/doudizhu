@@ -126,7 +126,7 @@ export class Room {
         }
     }
 
-    private getMsg(route: string, msg: any = null) {
+    private getMsg(route: number, msg: any = null) {
         this.app.sendMsgByUidSid(route, msg, this.uidsid);
     }
 

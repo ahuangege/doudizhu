@@ -1,4 +1,4 @@
-import { Application, RpcClass } from "mydog";
+import { Application } from "mydog";
 import { I_matchRole, MatchMgr } from "../../../app/svr_match/matchMgr";
 import { svr_match } from "../../../app/svr_match/svr_match";
 
@@ -6,7 +6,7 @@ import { svr_match } from "../../../app/svr_match/svr_match";
 declare global {
     interface Rpc {
         match: {
-            main: RpcClass<Remote>,
+            main: Remote,
         }
     }
 }

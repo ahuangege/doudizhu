@@ -119,7 +119,7 @@ export class RoleInfo {
         }
     }
 
-    getMsg(cmd: string, info: any = null) {
+    getMsg(cmd: number, info: any = null) {
         this.app.sendMsgByUidSid(cmd, info, [this.uidsid]);
     }
 

@@ -1,10 +1,10 @@
-import { Application, RpcClass } from "mydog";
+import { Application } from "mydog";
 import { svr_gate } from "../../../app/svr_gate/svr_gate";
 
 declare global {
     interface Rpc {
         gate: {
-            main: RpcClass<Remote>,
+            main: Remote,
         }
     }
 }

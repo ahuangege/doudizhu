@@ -1,4 +1,4 @@
-import { Application, RpcClass, rpcErr } from "mydog";
+import { Application, rpcErr } from "mydog";
 import { RoleMgr } from "../../../app/svr_info/roleMgr";
 import { svr_info } from "../../../app/svr_info/svr_info";
 import { I_gameState } from "../../../app/util/gameUtil";
@@ -7,7 +7,7 @@ import { I_roleAllInfoClient } from "../../../app/util/someInterface";
 declare global {
     interface Rpc {
         info: {
-            main: RpcClass<Remote>,
+            main: Remote,
         }
     }
 }

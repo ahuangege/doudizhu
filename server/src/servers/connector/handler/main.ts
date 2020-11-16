@@ -1,4 +1,4 @@
-import { Application, Session } from "mydog";
+import { Application, Session, app } from "mydog";
 import { svr_connector } from "../../../app/svr_connector/svr_connector";
 import { constKey, getInfoId } from "../../../app/util/gameUtil";
 
@@ -23,8 +23,6 @@ export default class Handler {
                 }
                 session.bind(msg.uid);
                 session.set({ "infoId": infoId });
-                session.setCloseCb(onUserLeave);
-
                 next(info);
             });
 
@@ -46,8 +44,6 @@ export default class Handler {
             }
             session.bind(msg.uid);
             session.set({ "infoId": infoId });
-            session.setCloseCb(onUserLeave);
-
             next(info);
         });
     }
@@ -56,7 +52,7 @@ export default class Handler {
 
 
 // 玩家socket断开
-function onUserLeave(app: Application, session: Session) {
+export function onUserLeave(session: Session) {
     console.log("--- one user leave :", session.uid);
 
     if (!session.uid) {

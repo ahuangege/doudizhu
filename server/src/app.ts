@@ -1,15 +1,16 @@
 
-import { Application, connector, createApp, Session } from "mydog";
-import { svr_info } from "./app/svr_info/svr_info";
+import { connector, createApp, Session } from "mydog";
 let app = createApp();
 
+import { svr_info } from "./app/svr_info/svr_info";
 import { getCpuUsage } from "./app/util/cpuUsage";
 import { constKey, getGameState, svrType } from "./app/util/gameUtil";
 import { svr_init } from "./app/util/serverInit";
+import { onUserLeave } from "./servers/connector/handler/main";
 
 app.appName = "斗地主";
 app.setConfig("encodeDecode", { "msgDecode": msgDecode, "msgEncode": msgEncode });
-app.setConfig("connector", { "connector": connector.connectorWs, heartbeat: 10, interval: 30 });
+app.setConfig("connector", { "connector": connector.connectorWs, heartbeat: 10, interval: 30, clientOffCb: onUserLeave });
 app.setConfig("rpc", { interval: 30 });
 app.setConfig("mydogList", () => {
     let onlineNum = "--";
@@ -34,14 +35,14 @@ app.setConfig("logger", function (level, info) {
 
 
 app.configure(svrType.connector, function () {
-    app.route(svrType.info, function (app: Application, session: Session, serverType: string, cb) {
-        cb(session.get("infoId"));
+    app.route(svrType.info, function (session: Session) {
+        return session.get("infoId");
     });
-    app.route(svrType.match, function (app: Application, session: Session, serverType: string, cb) {
-        cb(constKey.match);
+    app.route(svrType.match, function (session: Session) {
+        return constKey.match;
     });
-    app.route(svrType.game, function (app: Application, session: Session, serverType: string, cb) {
-        cb(getGameState(session).gameSvr);
+    app.route(svrType.game, function (session: Session) {
+        return getGameState(session).gameSvr;
     });
 });
 

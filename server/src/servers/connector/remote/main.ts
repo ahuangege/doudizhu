@@ -1,11 +1,11 @@
-import { Application, RpcClass } from "mydog";
+import { Application } from "mydog";
 import { svr_connector } from "../../../app/svr_connector/svr_connector";
 import { cmd } from "../../../config/cmd";
 
 declare global {
     interface Rpc {
         connector: {
-            main: RpcClass<Remote>,
+            main: Remote,
         }
     }
 }
