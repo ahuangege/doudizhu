@@ -10,7 +10,7 @@ import { onUserLeave } from "./servers/connector/handler/main";
 
 app.appName = "斗地主";
 app.setConfig("encodeDecode", { "msgDecode": msgDecode, "msgEncode": msgEncode });
-app.setConfig("connector", { "connector": connector.connectorWs, heartbeat: 10, interval: 30, clientOffCb: onUserLeave });
+app.setConfig("connector", { "connector": connector.Ws, heartbeat: 10, interval: 30, clientOffCb: onUserLeave });
 app.setConfig("rpc", { interval: 30 });
 app.setConfig("mydogList", () => {
     let onlineNum = "--";

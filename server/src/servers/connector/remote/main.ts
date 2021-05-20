@@ -25,15 +25,21 @@ export default class Remote {
 
 
     kickUserNotTellInfoSvr(msg: { "uid": number, "info": string }, cb?: (err: number) => void) {
-        if (this.app.hasClient(msg.uid)) {
+        let session = this.app.getSession(msg.uid);
+        if (session) {
             this.app.sendMsgByUid(cmd.onKicked, { "code": 1, "info": msg.info }, [msg.uid]);
             svr_connector.connectorMgr.setUid(msg.uid);
-            this.app.closeClient(msg.uid);
+            setTimeout(() => {
+                session.close();
+            }, 100)
         }
         cb && cb(0);
     }
 
     setGameState(uid: number, gameState: { "gameSvr": string, "roomId": number }) {
-        this.app.applySession(uid, { "gameState": gameState });
+        let session = this.app.getSession(uid);
+        if (session) {
+            session.set({ "gameState": gameState });
+        }
     }
 }
