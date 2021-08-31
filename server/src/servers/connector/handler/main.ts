@@ -58,8 +58,8 @@ export function onUserLeave(session: Session) {
     if (!session.uid) {
         return;
     }
-    let isNeedTell = svr_connector.connectorMgr.isNeedTell(session.uid);
-    if (isNeedTell) {
-        app.rpc(getInfoId(session.uid)).info.main.offline(session.uid);
+    if (session.getLocal("notTellInfo")) {
+        return;
     }
+    app.rpc(getInfoId(session.uid)).info.main.offline(session.uid);
 }

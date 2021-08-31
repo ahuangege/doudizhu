@@ -12,7 +12,7 @@ export class RoleMgr {
     constructor(app: Application) {
         this.app = app;
         this.loginUtil = new LoginUtil();
-        setInterval(this.updateSqlRole.bind(this), 1000 / 10);
+        setInterval(this.updateSqlRole.bind(this), 5 * 1000);
         setInterval(this.check_delRole.bind(this), 1 * 3600 * 1000);
     }
 
@@ -25,28 +25,32 @@ export class RoleMgr {
         if (!role) {
             this.loginUtil.getAllRoleInfo(uid, (err, allInfo) => {
                 if (err) {
+                    console.log(err);
+                    return cb(0, { code: -1 } as any);
+                }
+                if (this.roles[uid]) {
                     return cb(0, { code: -1 } as any);
                 }
                 role = new RoleInfo(this.app, allInfo);
                 this.roles[uid] = role;
-                role.role.token = token;
+                role.roleMem.token = token;
                 role.entryServerLogic(sid, cb);
             });
             return;
         }
-        console.log('信息已存在', role.role.sid);
-        if (role.role.sid) {
+        console.log('信息已存在', role.sid);
+        if (role.sid) {
             let data = { "uid": uid, "info": "您的账号在别处登陆" };
-            this.app.rpc(role.role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
+            this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
                 if (err && err !== rpcErr.noServer) {
                     return cb(0, { code: -1 } as any);
                 }
                 role.offline();
-                role.role.token = token;
+                role.roleMem.token = token;
                 role.entryServerLogic(sid, cb);
             });
         } else {
-            role.role.token = token;
+            role.roleMem.token = token;
             role.entryServerLogic(sid, cb);
         }
     }
@@ -59,12 +63,12 @@ export class RoleMgr {
         if (!role) {
             return cb(0, { "code": 1 } as any);
         }
-        if (role.role.token !== token) {
+        if (role.roleMem.token !== token) {
             return cb(1, { "code": 2 } as any);
         }
-        if (role.role.sid) {
+        if (role.sid) {
             let data = { "uid": uid, "info": "您的账号在别处登陆" };
-            this.app.rpc(role.role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
+            this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
                 if (err && err !== rpcErr.noServer) {
                     return cb(0, { code: -1 } as any);
                 }
@@ -88,10 +92,10 @@ export class RoleMgr {
     private updateSqlRole() {
         let num = 0;
         for (let one of this.updateSqlRoles) {
-            one.updateSql();
             this.updateSqlRoles.delete(one);
+            one.updateSql();
             num++;
-            if (num === 20) {
+            if (num === 50) {
                 break;
             }
         }

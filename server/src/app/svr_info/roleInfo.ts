@@ -3,12 +3,12 @@ import { cmd } from "../../config/cmd";
 import { I_matchRole } from "../svr_match/matchMgr";
 import { I_gameState } from "../util/gameUtil";
 import { nowMs } from "../util/nowTime";
-import { I_roleAllInfo, I_roleInfo, I_roleInfoMysql, I_roleAllInfoClient } from "../util/someInterface";
+import { I_roleAllInfo, I_roleInfo, I_roleAllInfoClient, I_roleMem } from "../util/someInterface";
 import { timeFormat } from "../util/util";
 import { svr_info } from "./svr_info";
 
 // 数据库里的玩家数据（字段全部为真，以供下面使用）
-export let roleMysql: I_roleInfoMysql = {
+export let roleMysql: I_roleInfo = {
     "uid": 1,
     "nickname": "1",
     "gold": 1,
@@ -20,9 +20,11 @@ export let roleMysql: I_roleInfoMysql = {
 export class RoleInfo {
     public app: Application;
     public role: I_roleInfo;
-    public uidsid: { "uid": number, "sid": string };
+    public roleMem: I_roleMem;
+    public uid: number;
+    public sid: string = "";
 
-    private changedSqlKey: { [k in keyof I_roleInfoMysql]?: boolean } = {};
+    private changedKey: { [k in keyof I_roleInfo]?: boolean } = {};
     public delTime = 0;
     private isInSql = false;
 
@@ -30,16 +32,27 @@ export class RoleInfo {
     constructor(app: Application, allInfo: I_roleAllInfo) {
         this.app = app;
         this.role = allInfo.role;
-        this.uidsid = { "uid": allInfo.role.uid, "sid": allInfo.role.sid };
+        this.uid = allInfo.role.uid;
+        this.roleMem = {
+            "gameSvr": "",
+            "roomId": 0,
+            "token": 0,
+        }
     }
 
     entryServerLogic(sid: string, cb: (err: rpcErr, info: I_roleAllInfoClient) => void) {
-        this.uidsid.sid = sid;
-        this.role.sid = sid;
+        this.sid = sid;
         this.changeRoleInfo({ "loginTime": timeFormat(new Date()) });
 
         this.online();
-        cb(0, { "code": 0, "role": this.role });
+        cb(0, {
+            "code": 0,
+            "uid": this.uid,
+            "nickname": this.role.nickname,
+            "gold": this.role.gold,
+            "gameInfo": this.role.gameInfo,
+            "roomId": this.roleMem.roomId,
+        });
     }
 
     /**
@@ -55,39 +68,43 @@ export class RoleInfo {
     offline() {
         this.delTime = nowMs() + 40 * 3600 * 1000;
 
-        this.uidsid.sid = "";
-        this.role.sid = "";
+        this.sid = "";
 
-        let tmpRole = this.role;
-        if (tmpRole.gameSvr) {
-            if (tmpRole.roomId === 0) {
-                this.app.rpc(tmpRole.gameSvr).match.main.offline(tmpRole.uid);
-                this.changeGameState({ "gameSvr": "", "roomId": 0 });
+        let roleMem = this.roleMem;
+        if (roleMem.gameSvr) {
+            if (roleMem.roomId === 0) {
+                this.app.rpc(roleMem.gameSvr).match.main.offline(this.uid);
+                this.changeRoleMem({ "gameSvr": "", "roomId": 0 });
             } else {
-                this.app.rpc(tmpRole.gameSvr).game.main.offline(tmpRole.roomId, tmpRole.uid);
+                this.app.rpc(roleMem.gameSvr).game.main.offline(roleMem.roomId, this.uid);
             }
         }
     }
 
     updateSql() {
         this.isInSql = false;
-        let changedStr = "";
-        for (let x in this.changedSqlKey) {
-            if (typeof (roleMysql as any)[x] === "string") {
-                changedStr += ", " + x + "='" + (this.role as any)[x] + "'";
-            } else if (typeof (roleMysql as any)[x] === "object") {
-                changedStr += ", " + x + "='" + JSON.stringify((this.role as any)[x]) + "'";
+
+        let updateArr: string[] = [];
+        let key: keyof I_roleInfo;
+        for (key in this.changedKey) {
+            let typeStr = typeof roleMysql[key];
+            if (typeStr === "string") {
+                updateArr.push(key + "='" + this.role[key] + "'");
+            } else if (typeStr === "object") {
+                updateArr.push(key + "='" + JSON.stringify(this.role[key]) + "'");
             } else {
-                changedStr += ", " + x + "=" + (this.role as any)[x];
+                updateArr.push(key + "=" + this.role[key]);
             }
         }
-        if (!changedStr) {
+        if (updateArr.length === 0) {
             return;
         }
-        this.changedSqlKey = {};
-        svr_info.mysql.query("update player set " + changedStr.slice(1) + " where uid = " + this.uidsid.uid + " limit 1", null, (err) => {
+        this.changedKey = {};
+        let sql = "update player set " + updateArr.join(",") + " where uid = " + this.uid + " limit 1";
+        svr_info.mysql.query(sql, null, (err) => {
             if (err) {
-                console.log(err);
+                console.error(sql);
+                console.error(err);
             }
         });
     }
@@ -97,41 +114,44 @@ export class RoleInfo {
      * 玩家信息改变
      */
     changeRoleInfo(changed: { [K in keyof I_roleInfo]?: I_roleInfo[K] }) {
-        let needDb = false;
-        for (let x in changed) {
-            (this.role as any)[x] = (changed as any)[x];
-            if ((roleMysql as any)[x]) {
-                (this.changedSqlKey as any)[x] = true;
-                needDb = true;
-            }
+        let key: keyof I_roleInfo;
+        for (key in changed) {
+            (this.role as any)[key] = changed[key];
+            this.changedKey[key] = true;
         }
-        if (needDb && !this.isInSql) {
-            this.isInSql = true;
-            svr_info.roleMgr.toSqlRoles(this);
-        }
+        this.addToSqlPool();
     }
 
     changeSqlKey(key: keyof I_roleInfo) {
-        (this.changedSqlKey as any)[key] = true;
+        this.changedKey[key] = true;
+        this.addToSqlPool();
+    }
+
+    addToSqlPool() {
         if (!this.isInSql) {
             this.isInSql = true;
             svr_info.roleMgr.toSqlRoles(this);
         }
     }
 
-    getMsg(cmd: number, info: any = null) {
-        this.app.sendMsgByUidSid(cmd, info, [this.uidsid]);
+    changeRoleMem(changed: { [K in keyof I_roleMem]?: I_roleMem[K] }) {
+        let key: keyof I_roleMem;
+        for (key in changed) {
+            (this.roleMem as any)[key] = changed[key];
+        }
     }
 
-    changeGameState(gameState: I_gameState) {
-        this.role.gameSvr = gameState.gameSvr;
-        this.role.roomId = gameState.roomId;
+    getMsg(cmd: number, info: any = null) {
+        if (this.sid) {
+            this.app.sendMsgByUidSid(cmd, info, [this]);
+        }
     }
+
 
     toMatchJson() {
         let info: I_matchRole = {
-            "uid": this.role.uid,
-            "sid": this.role.sid,
+            "uid": this.uid,
+            "sid": this.sid,
             "nickname": this.role.nickname,
             "gold": this.role.gold,
         };
@@ -156,6 +176,6 @@ export class RoleInfo {
         this.changeSqlKey("gameInfo");
         this.addGold(info.addGold);
         this.getMsg(cmd.onWinInfo, { "isWin": info.isWin });
-        this.changeGameState({ "gameSvr": "", "roomId": 0 });
+        this.changeRoleMem({ "gameSvr": "", "roomId": 0 });
     }
 }

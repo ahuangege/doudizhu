@@ -1,7 +1,5 @@
 import { Application } from "mydog";
 import { mysqlConfig } from "../../config/dbConfig";
-import { ConnectorMgr } from "../svr_connector/connectorMgr";
-import { svr_connector } from "../svr_connector/svr_connector";
 import { RoomMgr } from "../svr_game/roomMgr";
 import { svr_game } from "../svr_game/svr_game";
 import { GateMgr } from "../svr_gate/gateMgr";
@@ -45,7 +43,6 @@ function gate_init(app: Application) {
 }
 
 function connector_init(app: Application) {
-    svr_connector.connectorMgr = new ConnectorMgr(app);
 }
 
 

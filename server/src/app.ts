@@ -26,7 +26,7 @@ app.setConfig("mydogList", () => {
         { "title": "infoNum", "value": roleInfoNum },
     ];
 });
-app.setConfig("logger", function (level, info) {
+app.setConfig("logger", (type, level, info) => {
     if (level === "warn" || level === "error") {
         console.log(app.serverId, info);
     }
@@ -63,10 +63,12 @@ process.on("uncaughtException", function (err: any) {
 
 
 function msgDecode(cmdId: number, msgBuf: Buffer): any {
-    console.log("req--", app.routeConfig[cmdId], JSON.parse(msgBuf as any));
-    return JSON.parse(msgBuf as any);
+    let data = JSON.parse(msgBuf as any);
+    console.log("↑ ", app.routeConfig[cmdId], data);
+    return data;
 }
 function msgEncode(cmdId: number, data: any): Buffer {
-    console.log("rsp--", app.routeConfig[cmdId], JSON.stringify(data));
-    return Buffer.from(JSON.stringify(data));
+    let msgStr = JSON.stringify(data);
+    console.log(" ↓", app.routeConfig[cmdId], msgStr);
+    return Buffer.from(msgStr);
 }

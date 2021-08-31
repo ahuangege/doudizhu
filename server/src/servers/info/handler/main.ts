@@ -21,8 +21,8 @@ export default class Handler {
         if (role.isMatchRpcing) {
             return;
         }
-        if (role.role.gameSvr) {
-            if (role.role.roomId) {
+        if (role.roleMem.gameSvr) {
+            if (role.roleMem.roomId) {
                 return next({ "code": 1, "info": "当前正在游戏中" });
             } else {
                 return;
@@ -40,10 +40,10 @@ export default class Handler {
     // 重连
     enterRoom(msg: any, session: Session, next: Function) {
         let role = svr_info.roleMgr.getRole(session.uid);
-        if (!role.role.gameSvr || !role.role.roomId) {
+        if (!role.roleMem.gameSvr || !role.roleMem.roomId) {
             return next({ "code": 1 });
         }
-        this.app.rpc(role.role.gameSvr).game.main.enterRoom(role.role.roomId, role.uidsid, (err, ok) => {
+        this.app.rpc(role.roleMem.gameSvr).game.main.enterRoom(role.roleMem.roomId, { "uid": role.uid, "sid": role.sid }, (err, ok) => {
             if (err) {
                 return next({ "code": 2 });
             }
@@ -51,7 +51,7 @@ export default class Handler {
                 changeInfoGameState(session.uid, { "gameSvr": "", "roomId": 0 });
                 return next({ "code": 1 });
             } else {
-                changeConGameState(session.uid, session.sid, { "gameSvr": role.role.gameSvr, "roomId": role.role.roomId });
+                changeConGameState(session.uid, session.sid, { "gameSvr": role.roleMem.gameSvr, "roomId": role.roleMem.roomId });
             }
         });
     }

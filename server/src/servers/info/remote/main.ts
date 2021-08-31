@@ -43,7 +43,7 @@ export default class Remote {
 
     setGameState(uid: number, gameState: I_gameState) {
         let role = this.roleMgr.getRole(uid);
-        role.changeGameState(gameState);
+        role.changeRoleMem(gameState);
     }
 
     gameOver(info: { "uid": number, "isWin": boolean, "addGold": number }) {
