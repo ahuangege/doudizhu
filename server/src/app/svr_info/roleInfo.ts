@@ -47,11 +47,13 @@ export class RoleInfo {
         this.online();
         cb(0, {
             "code": 0,
-            "uid": this.uid,
-            "nickname": this.role.nickname,
-            "gold": this.role.gold,
-            "gameInfo": this.role.gameInfo,
-            "roomId": this.roleMem.roomId,
+            "role": {
+                "uid": this.uid,
+                "nickname": this.role.nickname,
+                "gold": this.role.gold,
+                "gameInfo": this.role.gameInfo,
+                "roomId": this.roleMem.roomId,
+            }
         });
     }
 

@@ -21,6 +21,7 @@ export default class Handler {
 
         this.mysql.query("select id, password from account where username=? limit 1", [msg.username], (err, res: { "id": number, "password": string }[]) => {
             if (err) {
+                console.log(err)
                 return next({ "code": -1 });
             }
             if (res.length === 0) {     // 有则登录，无则注册
