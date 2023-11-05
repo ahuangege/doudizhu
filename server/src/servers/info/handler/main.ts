@@ -16,7 +16,7 @@ export default class Handler {
     }
 
     //  匹配
-    match(msg: any, session: Session, next: Function) {
+    async match(msg: any, session: Session, next: Function) {
         let role = svr_info.roleMgr.getRole(session.uid);
         if (role.isMatchRpcing) {
             return;
@@ -29,31 +29,32 @@ export default class Handler {
             }
         }
         role.isMatchRpcing = true;
-        this.app.rpc(constKey.match).match.main.match(role.toMatchJson(), (err) => {
+        try {
+            await this.app.rpc(constKey.match).match.main.match(role.toMatchJson());
+        } catch (e) {
+            console.log(e);
             role.isMatchRpcing = false;
-            if (!err) {
-                next({ "code": 0 });
-            }
-        });
+            return next({ "code": -1 })
+        }
+        role.isMatchRpcing = false;
+
+        next({ "code": 0 });
     }
 
     // 重连
-    enterRoom(msg: any, session: Session, next: Function) {
+    async enterRoom(msg: any, session: Session, next: Function) {
         let role = svr_info.roleMgr.getRole(session.uid);
         if (!role.roleMem.gameSvr || !role.roleMem.roomId) {
             return next({ "code": 1 });
         }
-        this.app.rpc(role.roleMem.gameSvr).game.main.enterRoom(role.roleMem.roomId, { "uid": role.uid, "sid": role.sid }, (err, ok) => {
-            if (err) {
-                return next({ "code": 2 });
-            }
-            if (!ok) {
-                changeInfoGameState(session.uid, { "gameSvr": "", "roomId": 0 });
-                return next({ "code": 1 });
-            } else {
-                changeConGameState(session.uid, session.sid, { "gameSvr": role.roleMem.gameSvr, "roomId": role.roleMem.roomId });
-            }
-        });
+        const ok = await this.app.rpc(role.roleMem.gameSvr).game.main.enterRoom(role.roleMem.roomId, { "uid": role.uid, "sid": role.sid });
+        if (!ok) {
+            changeInfoGameState(session.uid, { "gameSvr": "", "roomId": 0 });
+            return next({ "code": 1 });
+        } else {
+            changeConGameState(session.uid, session.sid, { "gameSvr": role.roleMem.gameSvr, "roomId": role.roleMem.roomId });
+        }
+        next({ "code": 0 });
     }
 }
 

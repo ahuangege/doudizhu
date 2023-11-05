@@ -8,44 +8,37 @@ export default class Handler {
         this.app = app;
     }
 
-    enter(msg: { uid: number, token: number }, session: Session, next: Function) {
-        this.app.rpc(constKey.gate).gate.main.isTokenOk(msg, (err, ok) => {
-            if (err) {
-                return next({ "code": -2, "info": "服务器错误" });
-            }
-            if (!ok) {
-                return next({ "code": 1, "info": "token错误" });
-            }
-            let infoId = getInfoId(msg.uid);
-            this.app.rpc(infoId).info.main.enterServer(msg.uid, session.sid, msg.token, (err, info) => {
-                if (err || info.code !== 0) {
-                    return next({ "code": 1 });
-                }
-                session.bind(msg.uid);
-                session.set({ "infoId": infoId });
-                next(info);
-            });
-
-        });
+    async enter(msg: { uid: number, token: number }, session: Session, next: Function) {
+        const ok = await this.app.rpc(constKey.gate).gate.main.isTokenOk(msg);
+        if (!ok) {
+            return next({ "code": 1, "info": "token错误" });
+        }
+        let infoId = getInfoId(msg.uid);
+        const info = await this.app.rpc(infoId).info.main.enterServer(msg.uid, session.sid, msg.token);
+        if (info.code !== 0) {
+            return next(info);
+        }
+        session.bind(msg.uid);
+        session.set({ "infoId": infoId });
+        next(info);
     }
 
 
     /**
      * 重连
      */
-    reconnectEnter(msg: { "uid": number, "token": number }, session: Session, next: Function) {
+    async reconnectEnter(msg: { "uid": number, "token": number }, session: Session, next: Function) {
         if (session.uid) {
             return;
         }
         let infoId = getInfoId(msg.uid);
-        this.app.rpc(infoId).info.main.reconnectEntry(msg.uid, session.sid, msg.token, function (err, info) {
-            if (err || info.code !== 0) {
-                return next({ "code": 1 });
-            }
-            session.bind(msg.uid);
-            session.set({ "infoId": infoId });
-            next(info);
-        });
+        const info = await this.app.rpc(infoId).info.main.reconnectEntry(msg.uid, session.sid, msg.token);
+        if (info.code !== 0) {
+            return next(info);
+        }
+        session.bind(msg.uid);
+        session.set({ "infoId": infoId });
+        next(info);
     }
 }
 
@@ -61,5 +54,5 @@ export function onUserLeave(session: Session) {
     if (session.getLocal("notTellInfo")) {
         return;
     }
-    app.rpc(getInfoId(session.uid)).info.main.offline(session.uid);
+    app.rpc(getInfoId(session.uid), true).info.main.offline(session.uid);
 }

@@ -1,9 +1,10 @@
 
-import mysqlClient from "../util/mysql";
+
+import { MysqlClient } from "../util/mysql";
 import { GateMgr } from "./gateMgr";
 
 interface I_svr_gate {
-    mysql: mysqlClient,
+    mysql: MysqlClient,
     gateMgr: GateMgr,
 }
 

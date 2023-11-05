@@ -1,4 +1,4 @@
-import { Application, rpcErr } from "mydog";
+import { Application } from "mydog";
 import { nowMs } from "../util/nowTime";
 import { I_roleAllInfo, I_roleAllInfoClient } from "../util/someInterface";
 import { LoginUtil } from "./loginUtil";
@@ -12,7 +12,6 @@ export class RoleMgr {
     constructor(app: Application) {
         this.app = app;
         this.loginUtil = new LoginUtil();
-        setInterval(this.updateSqlRole.bind(this), 5 * 1000);
         setInterval(this.check_delRole.bind(this), 1 * 3600 * 1000);
     }
 
@@ -20,63 +19,49 @@ export class RoleMgr {
      * 玩家登录游戏
      * @param uid 
      */
-    enterServer(uid: number, sid: string, token: number, cb: (err: rpcErr, info: I_roleAllInfoClient) => void) {
+    async enterServer(uid: number, sid: string, token: number): Promise<I_roleAllInfoClient> {
         let role = this.roles[uid];
         if (!role) {
-            this.loginUtil.getAllRoleInfo(uid, (err, allInfo) => {
-                if (err) {
-                    console.log(err);
-                    return cb(0, { code: -1 } as any);
-                }
-                if (this.roles[uid]) {
-                    return cb(0, { code: -1 } as any);
-                }
-                role = new RoleInfo(this.app, allInfo);
-                this.roles[uid] = role;
-                role.roleMem.token = token;
-                role.entryServerLogic(sid, cb);
-            });
-            return;
+            const allInfo = await this.loginUtil.getAllRoleInfo(uid);
+            if (this.roles[uid]) {
+                return { code: -1 } as any;
+            }
+            role = new RoleInfo(this.app, allInfo);
+            this.roles[uid] = role;
+            role.roleMem.token = token;
+            return role.entryServerLogic(sid);
         }
         console.log('信息已存在', role.sid);
         if (role.sid) {
             let data = { "uid": uid, "info": "您的账号在别处登陆" };
-            this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
-                if (err && err !== rpcErr.noServer) {
-                    return cb(0, { code: -1 } as any);
-                }
-                role.offline();
-                role.roleMem.token = token;
-                role.entryServerLogic(sid, cb);
-            });
+            await this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data);
+            role.offline();
+            role.roleMem.token = token;
+            return role.entryServerLogic(sid);
         } else {
             role.roleMem.token = token;
-            role.entryServerLogic(sid, cb);
+            return role.entryServerLogic(sid);
         }
     }
 
     /**
      * 重连
      */
-    reconnectEntry(uid: number, sid: string, token: number, cb: (err: rpcErr, info: I_roleAllInfoClient) => void) {
+    async reconnectEntry(uid: number, sid: string, token: number) {
         let role = this.roles[uid];
         if (!role) {
-            return cb(0, { "code": 1 } as any);
+            return { "code": 1 } as any;
         }
         if (role.roleMem.token !== token) {
-            return cb(1, { "code": 2 } as any);
+            return { "code": 2 } as any;
         }
         if (role.sid) {
             let data = { "uid": uid, "info": "您的账号在别处登陆" };
-            this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data, (err) => {
-                if (err && err !== rpcErr.noServer) {
-                    return cb(0, { code: -1 } as any);
-                }
-                role.offline();
-                role.entryServerLogic(sid, cb);
-            });
+            await this.app.rpc(role.sid).connector.main.kickUserNotTellInfoSvr(data);
+            role.offline();
+            return role.entryServerLogic(sid);
         } else {
-            role.entryServerLogic(sid, cb);
+            return role.entryServerLogic(sid);
         }
     }
 
@@ -89,17 +74,6 @@ export class RoleMgr {
         this.updateSqlRoles.add(role);
     }
 
-    private updateSqlRole() {
-        let num = 0;
-        for (let one of this.updateSqlRoles) {
-            this.updateSqlRoles.delete(one);
-            one.updateSql();
-            num++;
-            if (num === 50) {
-                break;
-            }
-        }
-    }
 
     // 删除过期玩家数据
     private check_delRole() {

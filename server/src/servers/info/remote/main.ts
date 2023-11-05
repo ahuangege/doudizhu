@@ -1,4 +1,4 @@
-import { Application, rpcErr } from "mydog";
+import { Application } from "mydog";
 import { RoleMgr } from "../../../app/svr_info/roleMgr";
 import { svr_info } from "../../../app/svr_info/svr_info";
 import { I_gameState } from "../../../app/util/gameUtil";
@@ -23,15 +23,15 @@ export default class Remote {
     /**
      * 进入游戏
      */
-    enterServer(uid: number, sid: string, token: number, cb: (err: rpcErr, info: I_roleAllInfoClient) => void) {
-        this.roleMgr.enterServer(uid, sid, token, cb);
+    async enterServer(uid: number, sid: string, token: number): Promise<I_roleAllInfoClient> {
+        return await this.roleMgr.enterServer(uid, sid, token);
     }
 
     /**
      * 重连
      */
-    reconnectEntry(uid: number, sid: string, token: number, cb: (err: rpcErr, info: I_roleAllInfoClient) => void) {
-        this.roleMgr.reconnectEntry(uid, sid, token, cb);
+    async reconnectEntry(uid: number, sid: string, token: number): Promise<I_roleAllInfoClient> {
+        return this.roleMgr.reconnectEntry(uid, sid, token);
     }
 
     /**

@@ -1,14 +1,4 @@
-/**
- * 玩家数据结构 mysql
- */
-export interface I_roleInfo {
-    "uid": number,              // uid
-    "nickname": string,         // 昵称
-    "gold": number,           // 金币
-    "regTime": string,           // 注册时间
-    "loginTime": string,           // 最近登录时间
-    "gameInfo": { "win": number, "all": number }, // 胜利局数，总局数
-}
+import { Db_player } from "../logic/dbModel";
 
 /**
  * 玩家内存里部分数据
@@ -23,7 +13,7 @@ export interface I_roleMem {
  * 玩家基本数据
  */
 export interface I_roleAllInfo {
-    "role": I_roleInfo,
+    "role": Db_player,
 }
 
 /**

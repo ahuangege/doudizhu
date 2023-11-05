@@ -20,9 +20,8 @@ export default class Remote {
     /**
      * 创建房间
      */
-    newRoom(roles: I_matchRole[], cb: (err: number) => void) {
+    newRoom(roles: I_matchRole[]) {
         this.roomMgr.newRoom(roles);
-        cb(0);
     }
 
     // 掉线
@@ -32,12 +31,12 @@ export default class Remote {
     }
 
     // 重连进入房间
-    enterRoom(roomId: number, info: { "uid": number, "sid": string }, cb: (err: number, ok: boolean) => void) {
+    enterRoom(roomId: number, info: { "uid": number, "sid": string }) {
         let room = this.roomMgr.getRoom(roomId);
         if (!room) {
-            return cb(0, false);
+            return false;
         }
         let ok = room.enter(info);
-        cb(0, ok);
+        return ok;
     }
 }

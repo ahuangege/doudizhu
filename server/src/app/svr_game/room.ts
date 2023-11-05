@@ -2,7 +2,7 @@ import { Application } from "mydog";
 import { cmd } from "../../config/cmd";
 import { I_matchRole } from "../svr_match/matchMgr";
 import { changeConGameState, changeInfoGameState, getInfoId } from "../util/gameUtil";
-import { DicObj, randInt, removeFromArr } from "../util/util";
+import { Dic, randInt, removeFromArr } from "../util/util";
 import { cardUtil, e_card_arr_type, e_card_color, e_card_score, I_card, I_cardRes } from "./cardLogic";
 import { svr_game } from "./svr_game";
 
@@ -227,7 +227,7 @@ export class Room {
             p.lastPlayCard = [];
             this.nowChairId = this.getNextChairId(p.chairId);
             this.nowTime = 20 * 1000;
-            let cardRes: I_cardRes = { "card_arr_type": e_card_arr_type.none, "cards": [], "score": 0 };
+            let cardRes: I_cardRes = { "card_arr_type": e_card_arr_type.none, "cards": [], "score": e_card_score.A };
             this.getMsg(cmd.onPlayCard, { "cardRes": cardRes, "isOver": false });
             return;
         }

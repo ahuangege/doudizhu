@@ -26,8 +26,8 @@ app.setConfig("mydogList", () => {
         { "title": "infoNum", "value": roleInfoNum },
     ];
 });
-app.setConfig("logger", (type, level, info) => {
-    if (level === "warn" || level === "error") {
+app.setConfig("logger", (level, info) => {
+    if (level != "debug") {
         console.log(app.serverId, info);
     }
 });

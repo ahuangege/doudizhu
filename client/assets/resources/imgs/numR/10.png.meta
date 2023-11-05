@@ -1,6 +1,7 @@
 {
-  "ver": "2.3.5",
+  "ver": "2.3.7",
   "uuid": "6ae8f281-2193-4832-ac8a-5f5d5721f950",
+  "importer": "texture",
   "type": "sprite",
   "wrapMode": "clamp",
   "filterMode": "bilinear",
@@ -12,8 +13,9 @@
   "platformSettings": {},
   "subMetas": {
     "10": {
-      "ver": "1.0.4",
+      "ver": "1.0.6",
       "uuid": "592e224d-57de-458e-92b3-51f76a08759b",
+      "importer": "sprite-frame",
       "rawTextureUuid": "6ae8f281-2193-4832-ac8a-5f5d5721f950",
       "trimType": "auto",
       "trimThreshold": 1,

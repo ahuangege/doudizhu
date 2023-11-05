@@ -45,15 +45,16 @@ export class MatchMgr {
         }
     }
 
-    private matchOk(roles: I_matchRole[]) {
+    private async matchOk(roles: I_matchRole[]) {
         let gameSvr = randArr(this.app.getServersByType(svrType.game));
-        this.app.rpc(gameSvr.id).game.main.newRoom(roles, (err) => {
-            if (err) {
-                for (let one of roles) {
-                    changeInfoGameState(one.uid, { "gameSvr": "", "roomId": 0 });
-                }
+        try {
+            await this.app.rpc(gameSvr.id).game.main.newRoom(roles);
+        } catch (e) {
+            console.log(e)
+            for (let one of roles) {
+                changeInfoGameState(one.uid, { "gameSvr": "", "roomId": 0 });
             }
-        });
+        }
     }
 }
 

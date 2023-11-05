@@ -56,13 +56,13 @@ export class NewClass extends cc.Component {
         }
     }
 
-    svr_reconnectBack(msg: { "code": number, "role": I_roleInfo }) {
+    svr_reconnectBack(msg: I_roleInfo) {
         if (msg.code !== 0) {
             network.disconnect();
             this.reconnectFail();
             return;
         }
-        PlayerInfo.role = msg.role;
+        PlayerInfo.role = msg;
         HallMain.instance.reconnectBack();
         this.node.destroy();
     }

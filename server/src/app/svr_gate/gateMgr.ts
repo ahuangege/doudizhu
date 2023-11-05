@@ -1,13 +1,13 @@
 import { Application, ServerInfo } from "mydog";
 import { svrType } from "../util/gameUtil";
 import { nowMs } from "../util/nowTime";
-import { DicObj, randInt } from "../util/util";
+import { Dic, randInt } from "../util/util";
 
 
 export class GateMgr {
     private app: Application;
     private minSvr: ServerInfo = null as any;
-    private userToken: DicObj<{ "token": number, "time": number }> = {};
+    private userToken: Dic<{ "token": number, "time": number }> = {};
     constructor(app: Application) {
         this.app = app;
         this.init();
@@ -16,15 +16,11 @@ export class GateMgr {
     private init() {
         setTimeout(this.checkMinSvr.bind(this), 1000);
         // 定时获取网关服人数
-        setInterval(() => {
+        setInterval(async () => {
             let svrs = this.app.getServersByType(svrType.connector);
             for (let one of svrs) {
-                this.app.rpc(one.id).connector.main.getOnlineNum((err, num) => {
-                    if (err) {
-                        return;
-                    }
-                    one.userNum = num;
-                });
+                const num = await this.app.rpc(one.id).connector.main.getOnlineNum();
+                one.userNum = num;
             }
             this.checkMinSvr();
         }, 5000);

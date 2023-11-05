@@ -23,11 +23,11 @@ export const enum constKey {
 
 
 export function changeInfoGameState(uid: number, gameState: I_gameState) {
-    app.rpc(getInfoId(uid)).info.main.setGameState(uid, gameState);
+    app.rpc(getInfoId(uid), true).info.main.setGameState(uid, gameState);
 }
 
 export function changeConGameState(uid: number, sid: string, gameState: I_gameState) {
-    app.rpc(sid).connector.main.setGameState(uid, gameState);
+    app.rpc(sid, true).connector.main.setGameState(uid, gameState);
 }
 
 /**

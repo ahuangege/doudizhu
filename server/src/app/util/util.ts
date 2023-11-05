@@ -36,7 +36,14 @@ export function timeFormat(_date: any, hasTime = true): string {
     return timeStr;
 }
 
+export function getUpdateObj(obj: Dic<any>, changedKey: Dic<boolean>) {
+    let updateObj: Dic<any> = {};
+    for (let x in changedKey) {
+        updateObj[x] = obj[x];
+    }
+    return updateObj;
+}
 
-export interface DicObj<T = any> {
+export interface Dic<T = any> {
     [key: string]: T
 }

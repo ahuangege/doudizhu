@@ -17,9 +17,8 @@ export default class Remote {
         this.matchMgr = svr_match.matchMgr;
     }
 
-    match(info: I_matchRole, cb: (err: number) => void) {
+    match(info: I_matchRole) {
         this.matchMgr.match(info);
-        cb(0);
     }
 
     offline(uid: number) {

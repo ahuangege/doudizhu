@@ -9,8 +9,10 @@ import { svr_info } from "../svr_info/svr_info";
 import { MatchMgr } from "../svr_match/matchMgr";
 import { svr_match } from "../svr_match/svr_match";
 import { svrType } from "./gameUtil";
-import mysqlClient from "./mysql";
 import { nowMs } from "./nowTime";
+import { MysqlClient } from "./mysql";
+import { SyncUtil } from "sync-util";
+import { RoleSync } from "../dbSync/roleSync";
 
 // 游戏服务器启动，初始化
 export function svr_init(app: Application) {
@@ -38,7 +40,7 @@ export function svr_init(app: Application) {
 
 
 function gate_init(app: Application) {
-    svr_gate.mysql = new mysqlClient(mysqlConfig);
+    svr_gate.mysql = new MysqlClient(mysqlConfig);
     svr_gate.gateMgr = new GateMgr(app);
 }
 
@@ -47,8 +49,22 @@ function connector_init(app: Application) {
 
 
 function info_init(app: Application) {
-    svr_info.mysql = new mysqlClient(mysqlConfig)
+    svr_info.mysql = new MysqlClient(mysqlConfig)
     svr_info.roleMgr = new RoleMgr(app);
+    svr_info.syncUtil = new SyncUtil({
+        "handler": { "roleSync": new RoleSync(svr_info.mysql) },
+        "syncInterval": 3 * 60 * 1000,
+        "syncCount": 1000,
+        "logger": console
+    });
+
+    app.setConfig("onBeforeExit", async (cb) => {
+        await svr_info.syncUtil.saveAll();
+
+        setTimeout(() => {
+            cb();
+        }, 2000);
+    });
 }
 
 function match_init(app: Application) {

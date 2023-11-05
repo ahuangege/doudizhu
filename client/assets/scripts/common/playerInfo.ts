@@ -14,6 +14,7 @@ export class PlayerInfo {
 }
 
 export interface I_roleInfo {
+    "code": number,
     "uid": number,              // uid
     "nickname": string,         // 昵称
     "gold": number,           // 金币

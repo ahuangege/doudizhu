@@ -1,14 +1,15 @@
 import { Application, ServerInfo, Session } from "mydog";
 import { svrType } from "../../../app/util/gameUtil";
 import { randInt, timeFormat } from "../../../app/util/util";
-import mysqlClient from "../../../app/util/mysql";
 import { GateMgr } from "../../../app/svr_gate/gateMgr";
 import { svr_gate } from "../../../app/svr_gate/svr_gate";
+import { MysqlClient } from "../../../app/util/mysql";
+import { Db_account, dbTable } from "../../../app/logic/dbModel";
 
 
 export default class Handler {
     private app: Application;
-    private mysql: mysqlClient;
+    private mysql: MysqlClient;
     constructor(app: Application) {
         this.app = app;
         this.mysql = svr_gate.mysql;
@@ -17,36 +18,30 @@ export default class Handler {
 
 
     // 登录
-    login(msg: { "username": string, "password": string }, session: Session, next: Function) {
+    async login(msg: { "username": string, "password": string }, session: Session, next: Function) {
+        let uid = 0;
+        let res = await this.mysql.select<Db_account>(dbTable.account, "*", { "where": { "username": msg.username }, "limit": 1 });
+        if (res.length === 0) {     // 有则登录，无则注册
+            const account = new Db_account();
+            account.username = msg.username;
+            account.password = msg.password;
+            delete (account as any).id;
+            const insertRes = await this.mysql.insert<Db_account>(dbTable.account, account);
+            uid = insertRes.insertId;
+        } else if (msg.password !== res[0].password) {
+            return next({ "code": 1, "info": "密码错误" });
+        } else {
+            uid = res[0].id;
+        }
 
-        this.mysql.query("select id, password from account where username=? limit 1", [msg.username], (err, res: { "id": number, "password": string }[]) => {
-            if (err) {
-                return next({ "code": -1 });
-            }
-            if (res.length === 0) {     // 有则登录，无则注册
-                this.mysql.query("insert into account(username,password,regTime) values(?,?,?)", [msg.username, msg.password, timeFormat(new Date())], (err, res) => {
-                    if (err) {
-                        console.log(err)
-                        return next({ "code": -1 });
-                    }
-                    okData(res.insertId);
-                });
-            } else if (msg.password !== res[0].password) {
-                next({ "code": 1, "info": "密码错误" });
-            } else {
-                okData(res[0].id);
-            }
+        let minSvr = svr_gate.gateMgr.getConSvr();
+        next({
+            "code": 0,
+            "host": minSvr.clientHost,
+            "port": minSvr.clientPort,
+            "uid": uid,
+            "token": svr_gate.gateMgr.getToken(uid),
         });
 
-        function okData(uid: number) {
-            let minSvr = svr_gate.gateMgr.getConSvr();
-            next({
-                "code": 0,
-                "host": minSvr.clientHost,
-                "port": minSvr.clientPort,
-                "uid": uid,
-                "token": svr_gate.gateMgr.getToken(uid),
-            });
-        }
     }
 }

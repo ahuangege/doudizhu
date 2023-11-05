@@ -1,13 +1,13 @@
 import { Application } from "mydog";
 import { I_matchRole } from "../svr_match/matchMgr";
-import { DicObj } from "../util/util";
+import { Dic } from "../util/util";
 import { Room } from "./room";
 
 
 export class RoomMgr {
     private app: Application;
     private roomId: number = 1;
-    private rooms: DicObj<Room> = {};
+    private rooms: Dic<Room> = {};
     constructor(app: Application) {
         this.app = app;
         setInterval(this.update.bind(this), 100);

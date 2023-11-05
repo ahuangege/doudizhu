@@ -89,7 +89,7 @@ export default class NewClass extends cc.Component {
     }
 
     // 网关服登入回调
-    svr_onEnterBack(msg: { "code": number, "role": I_roleInfo }) {
+    svr_onEnterBack(msg: I_roleInfo) {
         // console.log(msg);
         if (msg.code !== 0) {
             this.isLogining = false;
@@ -97,7 +97,7 @@ export default class NewClass extends cc.Component {
             network.disconnect();
             return;
         }
-        PlayerInfo.role = msg.role;
+        PlayerInfo.role = msg;
         cc.director.loadScene("main");
     }
 

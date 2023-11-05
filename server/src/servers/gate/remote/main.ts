@@ -18,7 +18,7 @@ export default class Remote {
     /**
      * 获取在线人数
      */
-    isTokenOk(info: { "uid": number, "token": number }, cb: (err: number, ok: boolean) => void) {
-        cb(0, svr_gate.gateMgr.isTokenOk(info));
+    async isTokenOk(info: { "uid": number, "token": number }) {
+        return svr_gate.gateMgr.isTokenOk(info);
     }
 }

@@ -1,6 +1,7 @@
 {
-  "ver": "2.3.5",
+  "ver": "2.3.7",
   "uuid": "304bb55e-c49e-4c22-9566-60a324963940",
+  "importer": "texture",
   "type": "sprite",
   "wrapMode": "clamp",
   "filterMode": "bilinear",
@@ -12,8 +13,9 @@
   "platformSettings": {},
   "subMetas": {
     "editbox_btn.9": {
-      "ver": "1.0.4",
+      "ver": "1.0.6",
       "uuid": "afe3eeb0-8524-412a-9bf0-17090e8c3244",
+      "importer": "sprite-frame",
       "rawTextureUuid": "304bb55e-c49e-4c22-9566-60a324963940",
       "trimType": "auto",
       "trimThreshold": 1,
