@@ -25,7 +25,7 @@ export interface I_roleAllInfoClient {
     "nickname": string,         // 昵称
     "gold": number,           // 金币
     "gameInfo": { "all": number, "win": number },  // 游戏总局数，胜利局数
-    "roomId": number,       // 房间id
+    "roomId": number,       // 房间id   
 }
 
 
